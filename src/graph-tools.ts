@@ -27,6 +27,11 @@ import {
   TicketStoreFullError,
 } from './lib/attachment-tickets.js';
 import { buildBM25Index, scoreQuery, tokenize, type BM25Index } from './lib/bm25.js';
+import {
+  ALLOW_DUPLICATE_PARAM_DESCRIPTION,
+  findDuplicate,
+  type DedupeKind,
+} from './lib/create-dedupe.js';
 import { isDestructiveOperation } from './lib/destructive-ops.js';
 import {
   CONFIRM_PARAM_DESCRIPTION,
@@ -126,6 +131,9 @@ interface EndpointConfig {
   maxTop?: number; // Upper bound for $top, enforced in the schema
   nameFilter?: boolean; // Adds a `name` param that filters the returned members by displayName/email
   mentionShorthand?: boolean; // Rewrites <at user-id="..."> in the message body into Graph mentions
+  // Refuse a create that duplicates an existing item (same normalized subject/title, same
+  // start/due within a minute) unless allowDuplicate: true. See lib/create-dedupe.ts
+  dedupe?: DedupeKind;
 }
 
 const endpointsData = JSON.parse(
@@ -2742,6 +2750,7 @@ async function executeGraphTool(
     for (const [paramName, paramValue] of Object.entries(params)) {
       if (paramName === 'fileName' && config?.blobOutput) continue;
       if (paramName === 'name' && config?.nameFilter) continue;
+      if (paramName === 'allowDuplicate' && config?.dedupe) continue;
       // Skip control parameters - not part of the Microsoft Graph API
       if (
         [
@@ -3217,6 +3226,38 @@ async function executeGraphTool(
       options.forceJsonOutput = true;
     }
 
+    if (config?.dedupe && params.allowDuplicate !== true) {
+      let duplicate;
+      try {
+        duplicate = await findDuplicate(config.dedupe, path, body, (lookupPath, lookupHeaders) =>
+          graphClient.makeRequest(lookupPath, {
+            method: 'GET',
+            headers: lookupHeaders,
+            ...(options.apiVersion ? { apiVersion: options.apiVersion } : {}),
+            ...(accountAccessToken ? { accessToken: accountAccessToken } : {}),
+          })
+        );
+      } catch (error) {
+        logger.error(`Duplicate check failed for ${tool.alias}: ${(error as Error).message}`);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({
+                error: 'duplicate_check_failed',
+                message: `Nothing was created: the duplicate check could not read the target. ${(error as Error).message}`,
+              }),
+            },
+          ],
+          isError: true,
+        };
+      }
+      if (duplicate) {
+        logger.info(`Refusing ${tool.alias}: duplicate of ${String(duplicate.existing.id)}`);
+        return { content: [{ type: 'text', text: JSON.stringify(duplicate) }] };
+      }
+    }
+
     let response = await graphClient.graphRequest(path, options);
 
     const shouldProject = willProject && !response?.isError;
@@ -3595,6 +3636,13 @@ function registerGraphToolWithMcp(
 
   if (endpointConfig?.nameFilter) {
     paramSchema['name'] = z.string().optional().describe(MEMBER_NAME_PARAM_DESCRIPTION);
+  }
+
+  if (endpointConfig?.dedupe) {
+    paramSchema['allowDuplicate'] = z
+      .boolean()
+      .optional()
+      .describe(ALLOW_DUPLICATE_PARAM_DESCRIPTION);
   }
 
   if (isSkiptokenApplicable(tool, Object.keys(paramSchema), endpointConfig)) {

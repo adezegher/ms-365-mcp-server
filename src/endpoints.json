@@ -473,7 +473,8 @@
     "presets": ["calendar", "outlook", "personal"],
     "scopes": ["Calendars.ReadWrite"],
     "descriptionOverride": "Create (schedule) a new calendar event — a meeting or appointment — on the user's calendar. Times use nested objects, not flat fields: start: {dateTime, timeZone}, end: {dateTime, timeZone}. Do NOT use startDateTime/startTimeZone. For one-off events, UTC is simplest (e.g. 3:30 PM AEDT = 04:30 UTC). For recurring events, use the organizer's own time zone name instead — Graph resolves DST against the zone in start.timeZone, so UTC drifts after DST changes. Get the zone from get-mailbox-settings, or validate one with list-supported-time-zones instead of guessing from memory. Set subject, location, body, and attendees; supports online meetings and recurrence.",
-    "llmTip": "CRITICAL: Do not try to guess the email address of the recipients. Use the list-users tool to find the email address of the recipients."
+    "llmTip": "CRITICAL: Do not try to guess the email address of the recipients. Use the list-users tool to find the email address of the recipients.",
+    "dedupe": "event"
   },
   {
     "pathPattern": "/me/events/{event-id}",
@@ -544,7 +545,8 @@
     "presets": ["calendar", "outlook", "personal"],
     "scopes": ["Calendars.ReadWrite"],
     "descriptionOverride": "Create a calendar event on a specific calendar. Requires calendarId (the target calendar's ID). Times use nested {dateTime, timeZone} objects — do NOT use startDateTime/startTimeZone. UTC is simplest for one-off events; for recurring events use the organizer's own time zone (from get-mailbox-settings or list-supported-time-zones) instead of UTC, since Graph resolves DST against that zone.",
-    "llmTip": "CRITICAL: Do not try to guess the email address of the recipients. Use the list-users tool to find the email address of the recipients."
+    "llmTip": "CRITICAL: Do not try to guess the email address of the recipients. Use the list-users tool to find the email address of the recipients.",
+    "dedupe": "event"
   },
   {
     "pathPattern": "/me/calendars/{calendar-id}/events/{event-id}",
@@ -1427,7 +1429,8 @@
     "toolName": "create-todo-task",
     "presets": ["personal", "tasks"],
     "scopes": ["Tasks.ReadWrite"],
-    "llmTip": "Creates a new task in a Microsoft To Do list. Body: { title: \"...\" }; optional dueDateTime, reminderDateTime, importance, body (notes), recurrence, categories, and checklistItems: [{ displayName: \"...\", isChecked: false }] to create the task's steps inline (isChecked is optional). Requires todoTaskListId from list-todo-task-lists. To change steps after the task exists, use the *-todo-checklist-item tools."
+    "llmTip": "Creates a new task in a Microsoft To Do list. Body: { title: \"...\" }; optional dueDateTime, reminderDateTime, importance, body (notes), recurrence, categories, and checklistItems: [{ displayName: \"...\", isChecked: false }] to create the task's steps inline (isChecked is optional). Requires todoTaskListId from list-todo-task-lists. To change steps after the task exists, use the *-todo-checklist-item tools.",
+    "dedupe": "task"
   },
   {
     "pathPattern": "/me/todo/lists/{todoTaskList-id}/tasks/{todoTask-id}",

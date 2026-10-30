@@ -811,6 +811,18 @@ Environment variables:
 - `MS365_MCP_EXPECTED_USERNAME`: Require local MSAL auth to use this Microsoft account username (case-insensitive; CLI flag takes precedence)
 - `MS365_MCP_EXPECTED_HOME_ACCOUNT_ID`: Require local MSAL auth to use this exact MSAL homeAccountId (CLI flag takes precedence)
 
+## Duplicate Check on Create
+
+`create-calendar-event`, `create-specific-calendar-event` and `create-todo-task` (the
+endpoints with `"dedupe"` in `endpoints.json`) look before they create. When the target
+calendar already has an event with the same subject (case and spacing ignored) starting
+within a minute of the new one, or the target list a task with the same title and due time,
+nothing is created and the tool answers
+`{"duplicate": true, "existing": {"id": ..., "subject": ..., "start": ...}}` (tasks:
+`title`, `dueDateTime`, `status`). Pass `allowDuplicate: true` to create anyway. A task
+without a due time matches only an open task without one. If the check cannot read the
+target, nothing is created and the tool answers `{"error": "duplicate_check_failed"}`.
+
 ## Reading Mail as Clean Text
 
 `read-mail-text` returns messages as text with the bulk junk removed. Graph's

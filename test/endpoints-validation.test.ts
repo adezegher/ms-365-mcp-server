@@ -26,6 +26,7 @@ interface Endpoint {
   maxTop?: number;
   nameFilter?: boolean;
   mentionShorthand?: boolean;
+  dedupe?: string;
 }
 
 const endpoints: Endpoint[] = JSON.parse(
@@ -226,6 +227,17 @@ describe('endpoints.json validation', () => {
     // Nothing in the body schema explains the shorthand, so a flag the llmTip doesn't
     // mention is invisible to the model, and a tip without the flag promises a rewrite
     // the server doesn't do
+    // lib/create-dedupe.ts reads an event's sibling calendarView, or a task's own list
+    it('puts dedupe only on create tools of an events or tasks collection', () => {
+      for (const e of endpoints.filter((x) => x.dedupe !== undefined)) {
+        expect(e.method, `${e.toolName} dedupe`).toBe('post');
+        expect(['event', 'task'], `${e.toolName} dedupe`).toContain(e.dedupe);
+        expect(e.pathPattern, `${e.toolName} dedupe`).toMatch(
+          e.dedupe === 'event' ? /\/events$/ : /^\/me\/todo\/lists\/\{[^}]+\}\/tasks$/
+        );
+      }
+    });
+
     it('puts mentionShorthand exactly on the tools whose llmTip explains <at user-id>', () => {
       for (const e of endpoints) {
         expect(!!e.mentionShorthand, `${e.toolName} mentionShorthand`).toBe(

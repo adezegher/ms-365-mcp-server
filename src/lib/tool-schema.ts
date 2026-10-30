@@ -3,6 +3,7 @@ import { queryParameterSchema } from './query-parameter-schema.js';
 import { tidyToolJsonSchema, zodToToolJsonSchema } from '../normalize-tool-schema.js';
 import type { api } from '../generated/client.js';
 import { isDestructiveOperation, type DestructiveCheckConfig } from './destructive-ops.js';
+import { ALLOW_DUPLICATE_PARAM_DESCRIPTION } from './create-dedupe.js';
 import {
   isFetchAllPagesApplicable,
   isSkiptokenApplicable,
@@ -32,6 +33,7 @@ export interface ToolSchemaConfig extends DestructiveCheckConfig, QueryParamConf
   supportsExpandExtendedProperties?: boolean;
   acceptType?: string;
   nameFilter?: boolean;
+  dedupe?: string;
 }
 
 /**
@@ -109,7 +111,8 @@ function expandRecursion(
  * Also includes synthetic runtime params injected by graph-tools.ts that an agent
  * needs to know about: `confirm` (destructive gate), `fetchAllPages` (GET list
  * endpoints), `account` (multi-account mode, via `ctx`), `timezone` and
- * `expandExtendedProperties` (calendar endpoints, via `config`). `includeHeaders`
+ * `expandExtendedProperties` (calendar endpoints, via `config`), `allowDuplicate`
+ * (create tools with `dedupe`). `includeHeaders`
  * and `excludeResponse` are intentionally NOT surfaced here — they're the same
  * static text on every tool (no per-tool override to drift), optional booleans
  * with safe defaults, so omitting them from discovery only costs a feature, not
@@ -185,6 +188,17 @@ export function describeToolSchema(
       required: false,
       description: MEMBER_NAME_PARAM_DESCRIPTION,
       schema: { type: 'string' },
+    });
+  }
+
+  // Mirrors registerGraphTools: create tools with dedupe get `allowDuplicate`.
+  if (config?.dedupe) {
+    params.push({
+      name: 'allowDuplicate',
+      in: 'Query',
+      required: false,
+      description: ALLOW_DUPLICATE_PARAM_DESCRIPTION,
+      schema: { type: 'boolean' },
     });
   }
 
