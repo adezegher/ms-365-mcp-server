@@ -97,12 +97,14 @@ const UNIVERSAL_UTILITY_TOOLS = ['download-bytes', 'download-bytes-to-file'];
 // getCombinedPresetPattern adds it to every preset then. parse-teams-url only parses Teams meeting
 // URLs.
 // read-mail-text reads mail, so it rides with the mail-backed presets.
+// sweep reads calendars and To Do, so it rides with the presets that carry those.
 const SCOPED_UTILITY_TOOLS: Record<string, string[]> = {
   'get-download-url': ['files', 'onedrive', 'personal', 'work', 'search'],
   'get-upload-url': ['mail', 'calendar', 'outlook', 'personal', 'work'],
   'upload-attachment-from-file': ['mail', 'calendar', 'outlook', 'personal', 'work'],
   'parse-teams-url': ['teams', 'teams-write', 'work'],
   'read-mail-text': ['mail', 'outlook', 'personal', 'work'],
+  sweep: ['calendar', 'tasks', 'outlook', 'personal'],
 };
 
 // Fail fast if a scoped utility references a preset that does not exist (e.g. a typo like

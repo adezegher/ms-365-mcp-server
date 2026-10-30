@@ -23,6 +23,21 @@ program
   .option('--logout', 'Log out and clear saved credentials')
   .option('--verify-login', 'Verify login without starting the server')
   .option('--list-accounts', 'List all cached accounts')
+  .option(
+    '--sweep',
+    'Print one JSON object with the calendars, their events from today 00:00 for --days days and (with --tasks) every To Do list and task, then exit. Exit 0 ok, 2 bad arguments, 3 not signed in, 4 Graph or network error.'
+  )
+  .option('--days <n>', 'With --sweep: number of days from today 00:00 local time (1-366)', '7')
+  .option(
+    '--calendars <ids>',
+    'With --sweep: "all" (default) or comma-separated calendar ids',
+    'all'
+  )
+  .option('--tasks', 'With --sweep: include To Do lists and their tasks')
+  .option(
+    '--timezone <zone>',
+    'With --sweep: IANA time zone for the window and for returned times (default: the system zone for the window, UTC for times)'
+  )
   .option('--select-account <accountId>', 'Select a specific account by ID')
   .option('--remove-account <accountId>', 'Remove a specific account by ID')
   .option(
@@ -154,6 +169,11 @@ export interface CommandOptions {
   logout?: boolean;
   verifyLogin?: boolean;
   listAccounts?: boolean;
+  sweep?: boolean;
+  days?: string;
+  calendars?: string;
+  tasks?: boolean;
+  timezone?: string;
   selectAccount?: string;
   removeAccount?: string;
   expectedUsername?: string;

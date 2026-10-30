@@ -724,6 +724,7 @@ The following options can be used when running ms-365-mcp-server directly from t
 --extra-scopes <scopes> Append additional Graph scopes to the token request (for use with your own app registration + graph-batch)
 --expected-username <username> Require local MSAL auth to use this account username
 --expected-home-account-id <id> Require local MSAL auth to use this exact homeAccountId
+--sweep           Print calendars, events and (with --tasks) To Do tasks as one JSON object and exit (see below)
 ```
 
 ### Server Options
@@ -810,6 +811,34 @@ Environment variables:
 - `MS365_MCP_AUTH_CACHE_COMMAND_TIMEOUT_MS`: Per-invocation timeout for `MS365_MCP_AUTH_CACHE_COMMAND` (default: `10000`)
 - `MS365_MCP_EXPECTED_USERNAME`: Require local MSAL auth to use this Microsoft account username (case-insensitive; CLI flag takes precedence)
 - `MS365_MCP_EXPECTED_HOME_ACCOUNT_ID`: Require local MSAL auth to use this exact MSAL homeAccountId (CLI flag takes precedence)
+
+## Calendar and To Do Sweep
+
+`--sweep` reads the cached sign-in, prints one JSON object and exits, for schedulers and
+scripts that want the user's agenda without an MCP client. The `sweep` tool returns the same
+object to MCP clients (in the `calendar`, `tasks`, `outlook` and `personal` presets).
+
+```bash
+ms-365-mcp-server --sweep --days 2 [--calendars all|<id,id>] [--tasks] [--timezone Europe/Brussels]
+```
+
+- Window: today 00:00 in `--timezone` (default: the system zone) for `--days` days (1-366).
+- Calendars: every calendar from `/me/calendars`, or the given ids; one `calendarView` per
+  calendar, so recurring events come back as occurrences. Requests go out as `$batch`.
+- Tasks (`--tasks`): every To Do list and all its tasks; task bodies as plain text, at most
+  300 characters.
+- Times are Graph's own `{ dateTime, timeZone }`: in `--timezone` when given, else UTC.
+- Output: `{ generated, account, calendars: [{ id, name, isDefault, owner?, canEdit }],
+events: [{ id, calendarId, calendarName, subject, start, end, isAllDay, showAs,
+responseStatus, location: { displayName, address, coordinates } | null, organizer,
+isCancelled, seriesMasterId, webLink, lastModified }], lists: [{ id, displayName,
+wellknownListName }], tasks: [{ id, listId, listName, title, status, importance,
+dueDateTime, createdDateTime, lastModifiedDateTime, completedDateTime, body? }] }`.
+- Exit codes: `0` ok, `2` bad arguments, `3` not signed in (`{"error":"not_signed_in"}`),
+  `4` Graph or network error (`{"error":"graph_error","message":...}`).
+
+Run it with the same `--enabled-tools`/`--enabled-tools-file`/`--preset` as the server, so
+it asks for the scopes the sign-in was given.
 
 ## Duplicate Check on Create
 

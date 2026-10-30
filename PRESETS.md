@@ -6,18 +6,18 @@
 
 | Preset                        | Tools | Org mode | Description                                                                                                                       |
 | ----------------------------- | ----: | -------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| [`all`](#all)                 |   369 |          | All available tools                                                                                                               |
-| [`calendar`](#calendar)       |    47 |          | Calendar and event management                                                                                                     |
+| [`all`](#all)                 |   370 |          | All available tools                                                                                                               |
+| [`calendar`](#calendar)       |    48 |          | Calendar and event management                                                                                                     |
 | [`contacts`](#contacts)       |    15 |          | Outlook contacts management                                                                                                       |
 | [`excel`](#excel)             |    25 |          | Excel spreadsheet operations                                                                                                      |
 | [`files`](#files)             |    25 |          | OneDrive file and folder operations                                                                                               |
 | [`mail`](#mail)               |    49 |          | Email operations (read, send, manage folders, attachments)                                                                        |
 | [`onedrive`](#onedrive)       |    23 |          | OneDrive app only: drive and file operations, excluding Excel                                                                     |
 | [`onenote`](#onenote)         |    29 |          | OneNote notebook operations                                                                                                       |
-| [`outlook`](#outlook)         |    96 |          | Outlook app only: mail, calendar and contacts                                                                                     |
-| [`personal`](#personal)       |   177 |          | Personal productivity tools (mail, calendar, files, contacts, tasks, notes, search)                                               |
+| [`outlook`](#outlook)         |    97 |          | Outlook app only: mail, calendar and contacts                                                                                     |
+| [`personal`](#personal)       |   178 |          | Personal productivity tools (mail, calendar, files, contacts, tasks, notes, search)                                               |
 | [`search`](#search)           |     7 |          | Microsoft Search capabilities                                                                                                     |
-| [`tasks`](#tasks)             |    35 |          | Task and planning tools (To Do, Planner)                                                                                          |
+| [`tasks`](#tasks)             |    36 |          | Task and planning tools (To Do, Planner)                                                                                          |
 | [`teams`](#teams)             |    73 | required | Teams app only: chats, channels, meetings and presence                                                                            |
 | [`teams-write`](#teams-write) |    11 | required | Teams send-only: send/reply in chats and channels, list chats/teams/channels by name, activity notifications - no message reading |
 | [`users`](#users)             |    11 | required | User directory access                                                                                                             |
@@ -27,7 +27,7 @@
 
 All available tools
 
-Tools (369):
+Tools (370):
 
 - `accept-calendar-event`
 - `add-calendar-event-attachment`
@@ -356,6 +356,7 @@ Tools (369):
 - `share-drive-item`
 - `snooze-calendar-event-reminder`
 - `sort-excel-range`
+- `sweep`
 - `tentatively-accept-calendar-event`
 - `unmerge-excel-range`
 - `unpin-chat-message`
@@ -403,7 +404,7 @@ Tools (369):
 
 Calendar and event management
 
-Tools (47):
+Tools (48):
 
 - `accept-calendar-event`
 - `add-calendar-event-attachment`
@@ -445,6 +446,7 @@ Tools (47):
 - `list-supported-languages`
 - `list-supported-time-zones`
 - `snooze-calendar-event-reminder`
+- `sweep`
 - `tentatively-accept-calendar-event`
 - `update-calendar`
 - `update-calendar-event`
@@ -665,7 +667,7 @@ Tools (29):
 
 Outlook app only: mail, calendar and contacts
 
-Tools (96):
+Tools (97):
 
 - `accept-calendar-event`
 - `add-calendar-event-attachment`
@@ -750,6 +752,7 @@ Tools (96):
 - `send-draft-message`
 - `send-mail`
 - `snooze-calendar-event-reminder`
+- `sweep`
 - `tentatively-accept-calendar-event`
 - `update-calendar`
 - `update-calendar-event`
@@ -768,7 +771,7 @@ Tools (96):
 
 Personal productivity tools (mail, calendar, files, contacts, tasks, notes, search)
 
-Tools (177):
+Tools (178):
 
 - `accept-calendar-event`
 - `add-calendar-event-attachment`
@@ -925,6 +928,7 @@ Tools (177):
 - `share-drive-item`
 - `snooze-calendar-event-reminder`
 - `sort-excel-range`
+- `sweep`
 - `tentatively-accept-calendar-event`
 - `unmerge-excel-range`
 - `update-calendar`
@@ -966,7 +970,7 @@ Tools (7):
 
 Task and planning tools (To Do, Planner)
 
-Tools (35):
+Tools (36):
 
 - `create-planner-bucket`
 - `create-planner-plan`
@@ -996,6 +1000,7 @@ Tools (35):
 - `list-todo-task-lists`
 - `list-todo-task-lists-delta`
 - `list-todo-tasks`
+- `sweep`
 - `update-planner-bucket`
 - `update-planner-plan`
 - `update-planner-task`

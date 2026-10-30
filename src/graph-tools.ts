@@ -33,6 +33,8 @@ import {
   type DedupeKind,
 } from './lib/create-dedupe.js';
 import { isDestructiveOperation } from './lib/destructive-ops.js';
+import { graphClientAdapter } from './sweep-command.js';
+import { parseCalendars, runSweep, SweepError, SWEEP_MAX_DAYS } from './sweep.js';
 import {
   CONFIRM_PARAM_DESCRIPTION,
   DEFAULT_MAX_PAGES,
@@ -1847,6 +1849,85 @@ export const UTILITY_TOOLS: readonly UtilityTool[] = [
         return { content: [{ type: 'text', text }] };
       } catch (error) {
         return fail((error as Error).message);
+      }
+    },
+  },
+  {
+    name: 'sweep',
+    method: 'GET',
+    path: 'tool:sweep',
+    searchKeywords:
+      'agenda schedule overview all calendars events today this week upcoming todo tasks lists snapshot',
+    description:
+      "One call for the signed-in user's schedule: every calendar (or the given calendarIds) with its events from today 00:00 for `days` days (recurring events expanded), and with tasks: true every To Do list and its tasks. Uses $batch. Returns { generated, account, calendars: [{ id, name, isDefault, owner?, canEdit }], events: [{ id, calendarId, calendarName, subject, start, end, isAllDay, showAs, responseStatus, location: { displayName, address, coordinates } | null, organizer, isCancelled, seriesMasterId, webLink, lastModified }], lists: [{ id, displayName, wellknownListName }], tasks: [{ id, listId, listName, title, status, importance, dueDateTime, createdDateTime, lastModifiedDateTime, completedDateTime, body?: { content } }] }. Task bodies are plain text cut to 300 characters. Times come back as Graph gives them ({ dateTime, timeZone }), in timezone when given, else UTC.",
+    readOnlyHint: true,
+    openWorldHint: true,
+    buildSchema: (ctx) => {
+      const schema: Record<string, z.ZodTypeAny> = {
+        days: z
+          .number()
+          .int()
+          .min(1)
+          .max(SWEEP_MAX_DAYS)
+          .optional()
+          .describe('Days from today 00:00 local time (default 7).'),
+        calendarIds: z
+          .array(z.string())
+          .optional()
+          .describe('Calendar ids from list-calendars. Default: every calendar.'),
+        tasks: z
+          .boolean()
+          .optional()
+          .describe('Also return every To Do list and its tasks (default false).'),
+        timezone: z.string().optional().describe(TIMEZONE_PARAM_DESCRIPTION),
+      };
+      if (ctx.multiAccount) {
+        schema['account'] = z
+          .string()
+          .optional()
+          .describe(
+            'Account to use when multiple Microsoft accounts are configured. Required when multiple accounts exist (see list-accounts).'
+          );
+      }
+      return schema;
+    },
+    execute: async (params, { graphClient, authManager }) => {
+      const fail = (error: string, message?: string): CallToolResult => ({
+        content: [
+          { type: 'text', text: JSON.stringify({ error, ...(message ? { message } : {}) }) },
+        ],
+        isError: true,
+      });
+      const accountParam = params.account as string | undefined;
+      try {
+        const accountModeError = await checkAccountParamInBearerMode(accountParam, authManager);
+        if (accountModeError) return fail(accountModeError);
+        let accessToken: string | undefined;
+        let account: string | null = null;
+        if (authManager && !authManager.isOAuthModeEnabled() && !getRequestTokens()) {
+          accessToken = await authManager.getTokenForAccount(accountParam);
+          account = accountParam
+            ? ((await authManager.resolveAccount(accountParam)).username ?? null)
+            : ((await authManager.getCurrentAccount())?.username ?? null);
+        } else {
+          account = getUserIdentityForAudit(getRequestTokens()?.accessToken) ?? null;
+        }
+        const result = await runSweep(
+          graphClientAdapter(graphClient, accessToken),
+          {
+            days: (params.days as number | undefined) ?? 7,
+            calendars: parseCalendars(params.calendarIds),
+            tasks: params.tasks === true,
+            ...(typeof params.timezone === 'string' && params.timezone.trim() !== ''
+              ? { timezone: params.timezone.trim() }
+              : {}),
+          },
+          account
+        );
+        return { content: [{ type: 'text', text: graphClient.serialize(result) }] };
+      } catch (error) {
+        const code = error instanceof SweepError ? error.code : 'graph_error';
+        return fail(code, (error as Error).message);
       }
     },
   },

@@ -1244,8 +1244,13 @@ class AuthManager {
         logger.error(
           `Silent token acquisition failed: ${describeAuthError(error)}${hint ? ` ${hint}` : ''}`
         );
-        throw new Error(
-          hint ? `Silent token acquisition failed. ${hint}` : 'Silent token acquisition failed'
+        // The MSAL error rides along as `cause`, so a caller can tell an expired sign-in
+        // (interaction required) from a network failure
+        throw Object.assign(
+          new Error(
+            hint ? `Silent token acquisition failed. ${hint}` : 'Silent token acquisition failed'
+          ),
+          { cause: error }
         );
       }
     }

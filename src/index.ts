@@ -13,6 +13,9 @@ import {
 import { createTokenCacheStorage } from './token-cache-storage.js';
 import { dumpError, getActiveResources } from './crash-logging.js';
 import { version } from './version.js';
+import { sweepCommand } from './sweep-command.js';
+import GraphClient from './graph-client.js';
+import { getSecrets } from './secrets.js';
 
 // Global crash handlers. Without these, an unhandled rejection from a dependency
 // (MSAL HTTP, keytar native, fetch in node) kills the stdio process silently
@@ -121,6 +124,17 @@ async function main(): Promise<void> {
       const result = await authManager.testLogin();
       console.log(JSON.stringify(result));
       process.exit(0);
+    }
+
+    if (args.sweep) {
+      const result = await sweepCommand(
+        authManager,
+        async () => new GraphClient(authManager, await getSecrets()),
+        args
+      );
+      // Exit from the write callback: a large JSON on a pipe could be cut off otherwise
+      process.stdout.write(`${JSON.stringify(result.output)}\n`, () => process.exit(result.code));
+      return;
     }
 
     if (args.logout) {
