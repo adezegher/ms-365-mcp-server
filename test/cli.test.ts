@@ -676,4 +676,24 @@ describe('CLI Module', () => {
       expect(process.exit).toHaveBeenCalledWith(1);
     });
   });
+
+  describe('no-attendees mode', () => {
+    afterEach(() => {
+      delete process.env.MS365_MCP_NO_ATTENDEES;
+    });
+
+    it('--no-attendees turns on MS365_MCP_NO_ATTENDEES', () => {
+      delete process.env.MS365_MCP_NO_ATTENDEES;
+      commanderMocks.mockCommand.opts.mockReturnValue({ attendees: false });
+      parseArgs();
+      expect(process.env.MS365_MCP_NO_ATTENDEES).toBe('1');
+    });
+
+    it('leaves the env alone without the flag', () => {
+      delete process.env.MS365_MCP_NO_ATTENDEES;
+      commanderMocks.mockCommand.opts.mockReturnValue({ attendees: true });
+      parseArgs();
+      expect(process.env.MS365_MCP_NO_ATTENDEES).toBeUndefined();
+    });
+  });
 });

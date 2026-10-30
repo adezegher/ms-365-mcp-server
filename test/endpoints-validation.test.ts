@@ -27,6 +27,7 @@ interface Endpoint {
   nameFilter?: boolean;
   mentionShorthand?: boolean;
   dedupe?: string;
+  attendeeGuard?: string;
 }
 
 const endpoints: Endpoint[] = JSON.parse(
@@ -227,6 +228,17 @@ describe('endpoints.json validation', () => {
     // Nothing in the body schema explains the shorthand, so a flag the llmTip doesn't
     // mention is invisible to the model, and a tip without the flag promises a rewrite
     // the server doesn't do
+    // lib/attendee-guard.ts: create bodies are checked; an update also reads the event first
+    it('puts attendeeGuard only on event create (post) and update (patch) tools', () => {
+      for (const e of endpoints.filter((x) => x.attendeeGuard !== undefined)) {
+        expect(e.attendeeGuard, e.toolName).toBe(e.method === 'post' ? 'create' : 'update');
+        expect(['post', 'patch'], e.toolName).toContain(e.method);
+        expect(e.pathPattern, e.toolName).toMatch(
+          e.method === 'post' ? /\/events$/ : /\/events\/\{event-id\}$/
+        );
+      }
+    });
+
     // lib/create-dedupe.ts reads an event's sibling calendarView, or a task's own list
     it('puts dedupe only on create tools of an events or tasks collection', () => {
       for (const e of endpoints.filter((x) => x.dedupe !== undefined)) {

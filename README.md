@@ -852,6 +852,15 @@ nothing is created and the tool answers
 without a due time matches only an open task without one. If the check cannot read the
 target, nothing is created and the tool answers `{"error": "duplicate_check_failed"}`.
 
+## No-Attendees Mode
+
+`MS365_MCP_NO_ATTENDEES=1` (or `--no-attendees`) stops event writes that would make Exchange
+send mail. The tools with `"attendeeGuard"` in `endpoints.json` (create and update of events,
+default or specific calendar) then refuse a body carrying `attendees` (any casing) or
+`responseRequested: true` with `{"error": "attendees_not_allowed"}`, and an update first reads
+the event and refuses with `{"error": "event_has_attendees"}` when it has an attendee other
+than the organizer. Nothing is written in either case. Off by default.
+
 ## Reading Mail as Clean Text
 
 `read-mail-text` returns messages as text with the bulk junk removed. Graph's

@@ -59,6 +59,10 @@ program
   )
   .option('--no-message-signoff', 'Disable both message signoffs, overriding the env vars.')
   .option(
+    '--no-attendees',
+    'Refuse event writes that would make Exchange mail anyone: bodies with attendees or responseRequested, and updates of events that have attendees. Equivalent env var: MS365_MCP_NO_ATTENDEES=1.'
+  )
+  .option(
     '--http [address]',
     'Use Streamable HTTP transport instead of stdio. Format: [host:]port (e.g., "localhost:3000", ":3000", "3000"). Default: all interfaces on port 3000'
   )
@@ -182,6 +186,8 @@ export interface CommandOptions {
   messageSignoff?: boolean;
   messageSignoffSuffix?: string;
   messageSignoffPrefix?: string;
+  /** false when --no-attendees was passed (commander's negated-option form) */
+  attendees?: boolean;
   http?: string | boolean;
   enableAuthTools?: boolean;
   enableAttachmentUrls?: boolean;
@@ -242,6 +248,10 @@ export function parseArgs(): CommandOptions {
   if (options.messageSignoff === false) {
     process.env.MS365_MCP_MESSAGE_SIGNOFF_SUFFIX = '';
     process.env.MS365_MCP_MESSAGE_SIGNOFF_PREFIX = '';
+  }
+  // Same for no-attendees mode, which lib/attendee-guard.ts reads per call
+  if (options.attendees === false) {
+    process.env.MS365_MCP_NO_ATTENDEES = '1';
   }
   // Same for blob output, which graph-client.ts reads per download
   if (options.blobOutput) {

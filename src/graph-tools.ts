@@ -28,6 +28,14 @@ import {
 } from './lib/attachment-tickets.js';
 import { buildBM25Index, scoreQuery, tokenize, type BM25Index } from './lib/bm25.js';
 import {
+  ATTENDEES_NOT_ALLOWED,
+  bodyCarriesAttendees,
+  EVENT_HAS_ATTENDEES,
+  hasOtherAttendees,
+  isNoAttendeesMode,
+  type AttendeeGuardKind,
+} from './lib/attendee-guard.js';
+import {
   ALLOW_DUPLICATE_PARAM_DESCRIPTION,
   findDuplicate,
   type DedupeKind,
@@ -136,6 +144,9 @@ interface EndpointConfig {
   // Refuse a create that duplicates an existing item (same normalized subject/title, same
   // start/due within a minute) unless allowDuplicate: true. See lib/create-dedupe.ts
   dedupe?: DedupeKind;
+  // In no-attendees mode (MS365_MCP_NO_ATTENDEES), refuse bodies with attendees and, for
+  // 'update', events that already have them. See lib/attendee-guard.ts
+  attendeeGuard?: AttendeeGuardKind;
 }
 
 const endpointsData = JSON.parse(
@@ -3305,6 +3316,42 @@ async function executeGraphTool(
       params.excludeResponse !== true;
     if (mergePages || willProject || willProjectBatch || willFilterMembers) {
       options.forceJsonOutput = true;
+    }
+
+    if (config?.attendeeGuard && isNoAttendeesMode()) {
+      const refuse = (payload: Record<string, string>): CallToolResult => ({
+        content: [{ type: 'text', text: JSON.stringify(payload) }],
+        isError: true,
+      });
+      // Top-level params too: a flattened attendees field must not slip past
+      if (bodyCarriesAttendees(body) || bodyCarriesAttendees(params)) {
+        logger.warn(`Refusing ${tool.alias}: body carries attendees (no-attendees mode)`);
+        return refuse(ATTENDEES_NOT_ALLOWED);
+      }
+      if (config.attendeeGuard === 'update') {
+        let event: unknown;
+        try {
+          event = await graphClient.makeRequest(
+            `${path.split('?')[0]}?$select=attendees,organizer`,
+            {
+              method: 'GET',
+              headers: {},
+              ...(options.apiVersion ? { apiVersion: options.apiVersion } : {}),
+              ...(accountAccessToken ? { accessToken: accountAccessToken } : {}),
+            }
+          );
+        } catch (error) {
+          logger.error(`Attendee check failed for ${tool.alias}: ${(error as Error).message}`);
+          return refuse({
+            error: 'attendee_check_failed',
+            message: `Nothing was written: the event could not be read to check its attendees. ${(error as Error).message}`,
+          });
+        }
+        if (hasOtherAttendees(event)) {
+          logger.warn(`Refusing ${tool.alias}: event has attendees (no-attendees mode)`);
+          return refuse(EVENT_HAS_ATTENDEES);
+        }
+      }
     }
 
     if (config?.dedupe && params.allowDuplicate !== true) {
